@@ -1,2 +1,2 @@
-# deep-reinforcement-learning-pytorch
-## now test is in progress.
+# Deep-reinforcement-learning-pytorch
+popular deep-rl algorithms will be added here
