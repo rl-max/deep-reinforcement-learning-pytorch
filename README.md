@@ -1,5 +1,5 @@
 # Deep-reinforcement-learning-pytorch
-#### Popular deep-rl algorithms will be added here
+#### Popular deep-rl algorithms will be implemented here
 ## Algorithms available now
 1. [DQN](https://github.com/rl-max/deep-reinforcement-learning-pytorch/blob/main/dqn.py)
 2. [REINFORCE](https://github.com/rl-max/deep-reinforcement-learning-pytorch/blob/main/REINFORCE.py)
