@@ -2,7 +2,7 @@
 #### Popular deep-rl algorithms will be implemented here
 ## Algorithms available now
 1. [DQN](https://github.com/rl-max/deep-reinforcement-learning-pytorch/blob/main/dqn.py)
-2. [Dueling-Double-PER-DQN](https://github.com/rl-max/deep-reinforcement-learning-pytorch/blob/main/dueling-double-per-dqn.py
+2. [Dueling-Double-PER-DQN](https://github.com/rl-max/deep-reinforcement-learning-pytorch/blob/main/dueling-double-per-dqn.py)
 3. [REINFORCE](https://github.com/rl-max/deep-reinforcement-learning-pytorch/blob/main/REINFORCE.py)
 4. [Vanilla Actor-Critic](https://github.com/rl-max/deep-reinforcement-learning-pytorch/blob/main/actor-critic.py)
 5. [PPO](https://github.com/rl-max/deep-reinforcement-learning-pytorch/blob/main/ppo.py)
