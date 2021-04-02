@@ -54,8 +54,7 @@ def mini_batch(buffer, priority):
            torch.tensor(next_obs).float(), torch.tensor(done), indices, \
            torch.tensor(indices_prob).float()
     
-def train(net, target_net, optimizer):
-    global priority
+def train(net, target_net, optimizer, buffer, priority):
     priority = np.array(priority)
     obs, acts, rewards, next_obs, done, indices, prob = mini_batch(buffer, priority)
     
@@ -76,6 +75,7 @@ def train(net, target_net, optimizer):
     prior = prior.detach().numpy()
     priority[indices] = prior
     priority = deque(priority, maxlen=buffer_size)
+    return priority
     
 if __name__ == '__main__':
     env = gym.make('CartPole-v1')
@@ -109,7 +109,7 @@ if __name__ == '__main__':
             epsilon *= epsilon_decay
             
         if len(buffer) > start_train:
-            train(net, target_net, optimizer)
+            priority = train(net, target_net, optimizer, buffer, priority)
         
         if ep%target_interval==0 and ep!=0:
             target_net.load_state_dict(net.state_dict())
