@@ -33,8 +33,9 @@ class QNet(nn.Module):
         return q
 
 def mini_batch(buffer, priority):
-    real_p = priority[priority!=None]
+    real_p = priority[priority!=None] #get real(calculated from TD-error) priority
     max_p = max(real_p) if len(real_p)!=0 else 1.0
+    #priority of unvisited data should be max-priority
     prior = np.array([p**alpha if p!=None else max_p**alpha for p in priority])
     prob = prior/sum(prior)
     
@@ -54,7 +55,7 @@ def mini_batch(buffer, priority):
            torch.tensor(indices_prob).float()
     
 def train(net, target_net, optimizer):
-    global buffer, priority
+    global priority
     priority = np.array(priority)
     obs, acts, rewards, next_obs, done, indices, prob = mini_batch(buffer, priority)
     
@@ -63,13 +64,14 @@ def train(net, target_net, optimizer):
     target_q = rewards.view(-1, 1) + discount_fact * done.view(-1, 1) * q_target
     q = net(obs).gather(1, acts.view(-1, 1))
     
-    weight = (len(buffer)*prob) ** -beta
+    weight = (len(buffer)*prob) ** -beta #Importance-sampling weight from PER
     loss = weight.view(-1, 1) * F.smooth_l1_loss(q, target_q.detach(), reduce=False)
     
     optimizer.zero_grad()
     loss.mean().backward()
     optimizer.step()
     
+    #update priority
     prior = (torch.abs(target_q - q) + epsilon).view(-1)
     prior = prior.detach().numpy()
     priority[indices] = prior
