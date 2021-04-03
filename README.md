@@ -11,7 +11,8 @@
 8. [TD3](https://github.com/rl-max/deep-reinforcement-learning-pytorch/blob/main/td3.py)
 9. [SAC](https://github.com/rl-max/deep-reinforcement-learning-pytorch/blob/main/sac.py)
 ## Algorithms coming soon
-10. C51
+10. [C51](https://github.com/rl-max/deep-reinforcement-learning-pytorch/blob/main/c51.py)
+(C51 is poorly learned now. It will be fixed later. Please use it just for reference only)
 11. A3C
 12. D4PG
 ## Algorithms to be added in the future
