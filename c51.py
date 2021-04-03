@@ -7,7 +7,8 @@ import numpy as np
 import random
 from collections import deque
 
-#Hyperparameters
+#Note: This is not trained well. Use this for reference only.
+
 EPISODES = 10000
 learning_rate = 0.0005
 discount_fact = 0.98
@@ -85,7 +86,7 @@ def train(net, target_net, optimizer, buffer):
     loss.backward()
     optimizer.step()
       
-def expect(dists):
+def expect(dists): #function calculating expectation value
     q = []
     for dist in dists:
         support = torch.arange(min_sprt, max_sprt+1e-2, interval)
