@@ -21,10 +21,10 @@ class Network(nn.Module):
         self.p = nn.Linear(128, 2)
         self.value = nn.Linear(128, 1)
     
-    def pi(self, x, softmax_dim):
+    def pi(self, x):
         x = F.relu(self.fc1(x))
         x = F.relu(self.fc2(x))
-        prob = F.softmax(self.p(x), dim=softmax_dim)
+        prob = F.softmax(self.p(x), dim=1)
         return prob
     
     def v(self, x):
@@ -57,7 +57,7 @@ def train(net, optimizer, samples):
         advantage.reverse()
         advantage = torch.tensor(advantage).float().unsqueeze(1)
         
-        pi_a = net.pi(obs, softmax_dim=1).gather(1, acts.view(-1, 1))
+        pi_a = net.pi(obs).gather(1, acts.view(-1, 1))
         probs = probs.view(-1, 1)
         ratio = torch.exp(torch.log(pi_a) - torch.log(probs).detach()) 
         clipped = torch.clamp(ratio, 1-epsilon, 1+epsilon)
@@ -81,11 +81,11 @@ if __name__ == '__main__':
         obs = env.reset()
         done = False
         while not done:
-            prob = net.pi(torch.tensor(obs).float(), softmax_dim=0)
+            prob = net.pi(torch.tensor(obs).unsqueeze(0).float())
             prob_ = Categorical(prob)
             action = prob_.sample().item()
             next_obs, reward, done, info = env.step(action)
-            samples.append((obs, action, prob[action].item(), reward/100.0, next_obs, done))
+            samples.append((obs, action, prob[0][action].item(), reward/100.0, next_obs, done))
             score += reward
             step += 1
             obs = next_obs

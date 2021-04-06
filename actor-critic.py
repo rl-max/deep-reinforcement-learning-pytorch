@@ -19,10 +19,10 @@ class Network(nn.Module):
         self.p = nn.Linear(128, 2)
         self.value = nn.Linear(128, 1)
     
-    def pi(self, x, softmax_dim):
+    def pi(self, x):
         x = F.relu(self.fc1(x))
         x = F.relu(self.fc2(x))
-        prob = F.softmax(self.p(x), dim=softmax_dim)
+        prob = F.softmax(self.p(x), dim=1)
         return prob
     
     def v(self, x):
@@ -44,7 +44,7 @@ def train(net, optimizer, samples):
     
     target = rewards.view(-1, 1) + discount_factor * net.v(next_obs) * done.view(-1, 1)
     td = target - net.v(obs)
-    prob = net.pi(obs, softmax_dim=1).gather(1, acts.view(-1, 1))
+    prob = net.pi(obs).gather(1, acts.view(-1, 1))
     
     loss = -torch.log(prob) * td.detach() + F.smooth_l1_loss(net.v(obs), target.detach())
     
@@ -63,7 +63,7 @@ if __name__ == '__main__':
         obs = env.reset()
         done = False
         while not done:
-            prob = net.pi(torch.tensor(obs).float(), softmax_dim=0)
+            prob = net.pi(torch.tensor(obs).unsqueeze(0).float())
             prob_ = Categorical(prob)
             action = prob_.sample().item()
             next_obs, reward, done, info = env.step(action)
