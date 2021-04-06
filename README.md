@@ -10,7 +10,7 @@
 7. [DDPG](https://github.com/rl-max/deep-reinforcement-learning-pytorch/blob/main/ddpg.py)
 8. [TD3](https://github.com/rl-max/deep-reinforcement-learning-pytorch/blob/main/td3.py)
 9. [SAC](https://github.com/rl-max/deep-reinforcement-learning-pytorch/blob/main/sac.py)
-10. [Asynchronous-PPO](https://github.com/rl-max/deep-reinforcement-learning-pytorch/blob/main/asynchronous-ppo.py)
+10. [Asynchronous-PPO(A3C)](https://github.com/rl-max/deep-reinforcement-learning-pytorch/blob/main/asynchronous-ppo.py)
 ## Algorithms coming soon
 11. [C51](https://github.com/rl-max/deep-reinforcement-learning-pytorch/blob/main/c51.py)
 (C51 is being trained poorly now. It will be fixed later. Please use it for reference only)
