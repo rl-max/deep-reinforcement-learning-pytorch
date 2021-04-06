@@ -28,6 +28,7 @@ class QNet(nn.Module):
         x = F.relu(self.fc2(x))
         v = self.v(x)
         adv = self.adv(x)
+        #Dueling network architecture
         mean_adv = 0.5*torch.sum(adv, dim=1, keepdim=True)
         q = v + adv - mean_adv
         return q
@@ -63,7 +64,7 @@ def train(net, target_net, optimizer, buffer, priority):
     target_q = rewards.view(-1, 1) + discount_factor * done.view(-1, 1) * q_target
     q = net(obs).gather(1, acts.view(-1, 1))
     
-    weight = (len(buffer)*prob) ** -beta #Importance-sampling weight from PER
+    weight = (len(buffer)*prob) ** -beta #Importance-sampling weight of PER
     loss = weight.view(-1, 1) * F.smooth_l1_loss(q, target_q.detach(), reduce=False)
     
     optimizer.zero_grad()
@@ -100,15 +101,15 @@ if __name__ == '__main__':
             else:
                 action = q_value.argmax().item()
             next_obs, reward, done, info = env.step(action)
-            #Priority is initialized by 'None'
             buffer.append((obs, action, reward/100.0, next_obs, done))
-            priority.append(None)
+            priority.append(None) #Priority is initialized by 'None'
             obs = next_obs
             step += 1
             score += reward
             epsilon *= epsilon_decay
             
         if len(buffer) > start_train:
+            #train and get updated priority
             priority = train(net, target_net, optimizer, buffer, priority)
         
         if ep%target_interval==0 and ep!=0:

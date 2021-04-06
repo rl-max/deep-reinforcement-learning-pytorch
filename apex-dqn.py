@@ -31,6 +31,7 @@ class QNet(nn.Module):
         x = F.relu(self.fc2(x))
         v = self.v(x)
         adv = self.adv(x)
+        #Dueling network architecture
         mean_adv = 0.5*torch.sum(adv, dim=1, keepdim=True)
         q = v + adv - mean_adv
         return q
@@ -40,8 +41,9 @@ def mini_batch(buffer, priority, new_step):
        priority.append(None)
     priority = np.array(priority)
     
-    real_p = priority[priority!=None]
+    real_p = priority[priority!=None] #get real(calculated from TD-error) priority
     max_p = max(real_p) if len(real_p)!=0 else 1.0
+    #priority of unvisited data should be max-priority
     prior = [p**alpha if p!=None else max_p**alpha for p in priority]
     prob = np.array(prior)/sum(prior)
     
@@ -67,13 +69,14 @@ def train(net, target_net, optimizer, buffer, priority, new_step):
     target_q = rewards.view(-1, 1) + discount_factor * done.view(-1, 1) * q_target
     q = net(obs).gather(1, acts.view(-1, 1))
     
-    weight = (len(buffer)*prob) ** -beta
+    weight = (len(buffer)*prob) ** -beta #Importance-sampling weight of PER
     loss = weight.view(-1, 1) * F.smooth_l1_loss(q, target_q.detach(), reduce=False)
     
     optimizer.zero_grad()
     loss.mean().backward()
     optimizer.step()
     
+    #update priority
     prior = (torch.abs(target_q - q) + epsilon).view(-1)
     prior = prior.detach().numpy()
     priority = np.array(priority)
@@ -91,7 +94,7 @@ def actor(rank, act_net, learn):
     for ep in range(EPISODES):
         obs = env.reset()
         done = False
-        while not done and not learning:
+        while not done and not learning: #When the learner is not in the process of learning
             q_value = act_net(torch.tensor(obs).unsqueeze(0).float())
             rand = random.random()
             if rand < epsilon:
@@ -99,23 +102,23 @@ def actor(rank, act_net, learn):
             else:
                 action = q_value.argmax().item()
             next_obs, reward, done, info = env.step(action)
-            #Priority is initialized by 'None
-            if not learning:
+            if not learning: #When the learner is not in the process of learning
+                #Priority is initialized by 'None
                 buffer.append((obs, action, reward/100.0, next_obs, done, None))
                 new_step += 1
             score += reward
             epsilon *= epsilon_decay
             obs = next_obs
                 
-        if learn:
-            learning = True
+        if learn: #if learner
+            learning = True #variable notifying learning-start
             if len(buffer) > start_train:
-                #initialize buffe, priority after learning
+                #train and get updated priority
                 priority = train(net, target_net, optimizer, buffer, priority, new_step)
                 new_step = 0
             if ep%target_interval==0 and ep!=0:
                 target_net.load_state_dict(net.state_dict())
-            time.sleep(0.01)
+            time.sleep(0.01) #delay for loop-stability
             learning = False
             
         if ep%actnet_update==0 and ep!=0:
