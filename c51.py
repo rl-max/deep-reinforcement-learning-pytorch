@@ -7,11 +7,11 @@ import numpy as np
 import random
 from collections import deque
 
-#Note: This is not trained well. Use this for reference only.
+#Note: This is not being trained well. Use this for reference only.
 
 EPISODES = 10000
 learning_rate = 0.0005
-discount_fact = 0.98
+discount_factor = 0.98
 buffer_size, start_train = 100000, 2000
 batch_size = 32
 min_sprt, max_sprt = -2, 2
@@ -48,37 +48,36 @@ def mini_batch(buffer):
 
 def train(net, target_net, optimizer, buffer):
     obs, acts, rewards, next_obs, done = mini_batch(buffer)
-    q1_dist_, q2_dist_ = target_net(next_obs)
+    next_dist1, next_dist2 = target_net(next_obs)
     
-    sprt = torch.arange(min_sprt, max_sprt+1e-2, interval).unsqueeze(0)
-    support = sprt.repeat(batch_size, 1)
-    target_sprt = rewards.view(-1, 1) + discount_fact * done.view(-1, 1) * support
-    target_sprt = torch.clamp(target_sprt, min_sprt, max_sprt)
-    dists_ = []
-    for idx, (q1, q2) in enumerate(zip(expect(q1_dist_), expect(q2_dist_))):
-        if q1 >= q2: dists_.append(q1_dist_[idx])
-        else:        dists_.append(q2_dist_[idx])
-    dists_ = torch.stack(dists_, dim=0).float().detach()
+    support = torch.arange(min_sprt, max_sprt+1e-2, interval).unsqueeze(0)
+    supports = support.repeat(batch_size, 1)
+    target_sprts = rewards.view(-1, 1) + discount_factor * done.view(-1, 1) * supports
+    target_sprts = torch.clamp(target_sprts, min_sprt, max_sprt)
+    next_dists = []
+    for idx, (a1val, a2val) in enumerate(zip(expect(next_dist1), expect(next_dist2))):
+        if a1val >= a2val: next_dists.append(next_dist1[idx])
+        else:              next_dists.append(next_dist2[idx])
+    next_dists = torch.stack(next_dists, dim=0).float().detach()
     #projection
     target_dists = []
-    for sprt, t_sprt, dist in zip(support, target_sprt, dists_):
-        t_dists = []
-        for idx, ts in enumerate(t_sprt):
-            sub = np.abs(sprt - ts)
-            sub[sub > interval] = interval
-            #proportion between two probablities
-            proportion = (interval-sub)/interval
-            td = np.array(dist[idx] * proportion)
-            t_dists.append(td)
-        t_dist = np.sum(np.array(t_dists), axis=0)
-        target_dists.append(t_dist)
+    for supprt, target_sprt, dist in zip(supports, target_sprts, next_dists):
+        sub_dists = []
+        for idx, ts in enumerate(target_sprt):
+            diff = np.abs(supprt - ts)
+            diff[diff > interval] = interval
+            proportion = (interval - diff)/interval
+            t_d = np.array(dist[idx] * proportion)
+            sub_dists.append(t_d)
+        target_dist = np.sum(np.array(sub_dists), axis=0)
+        target_dists.append(target_dist)
     target_dists = torch.tensor(target_dists).float()
     
     dists = []
-    q1_dist, q2_dist = net(obs)
-    for q1, q2, act in zip(q1_dist, q2_dist, acts):
-        if act.item() == 0:  dists.append(q1)
-        else:                dists.append(q2)
+    a1_dists, a2_dists = net(obs)
+    for a1dist, a2dist, act in zip(a1_dists, a2_dists, acts):
+        if act.item() == 0:  dists.append(a1dist)
+        else:                dists.append(a2dist)
     dists = torch.stack(dists, dim=0).float()
     
     loss = F.kl_div(dists, target_dists.detach())
@@ -109,13 +108,13 @@ if __name__ == '__main__':
         obs = env.reset()
         done = False
         while not done:
-            q1_dist, q2_dist = net(torch.tensor(obs).unsqueeze(0).float())
-            q1_val, q2_val = expect(q1_dist).item(), expect(q2_dist).item()
+            a1_dist, a2_dist = net(torch.tensor(obs).unsqueeze(0).float())
+            a1_val, a2_val = expect(a1_dist).item(), expect(a2_dist).item()
             rand = random.random()
             if rand < epsilon:
                 action = random.randint(0, 1)
             else:
-                action = 0 if q1_val >= q2_val else 1
+                action = 0 if a1_val >= a2_val else 1
             next_obs, reward, done, info = env.step(action)
             buffer.append((obs, action, reward/10.0, next_obs, done))
             obs = next_obs

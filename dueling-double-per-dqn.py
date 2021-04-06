@@ -10,7 +10,7 @@ from collections import deque
 #Hyperparameters
 EPISODES = 10000
 learning_rate = 0.0005
-discount_fact = 0.98
+discount_factor = 0.98
 buffer_size, start_train = 50000, 2000
 epsilon, alpha, beta = 0.1, 0.6, 0.4 #for PER
 batch_size = 64
@@ -60,7 +60,7 @@ def train(net, target_net, optimizer, buffer, priority):
     
     target_a = net(next_obs).argmax(dim=1).view(-1, 1)
     q_target = target_net(next_obs).gather(1, target_a)
-    target_q = rewards.view(-1, 1) + discount_fact * done.view(-1, 1) * q_target
+    target_q = rewards.view(-1, 1) + discount_factor * done.view(-1, 1) * q_target
     q = net(obs).gather(1, acts.view(-1, 1))
     
     weight = (len(buffer)*prob) ** -beta #Importance-sampling weight from PER

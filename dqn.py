@@ -9,7 +9,7 @@ from collections import deque
 #Hyperparameters
 EPISODES = 10000
 learning_rate = 0.0005
-discount_fact = 0.98
+discount_factor = 0.98
 buffer_size, start_train = 50000, 2000
 batch_size = 32
 
@@ -40,7 +40,7 @@ def minibatch_and_train(net, target_net, optimizer, buffer):
     torch.tensor(acts), torch.tensor(rewards).float(), torch.tensor(next_obs).float(),\
     torch.tensor(done)
     
-    target_q = rewards + discount_fact * done * target_net(next_obs).max(dim=1)[0]
+    target_q = rewards + discount_factor * done * target_net(next_obs).max(dim=1)[0]
     target_q = target_q.view(-1, 1)
     q = net(obs).gather(1, acts.view(-1, 1))
     loss = F.smooth_l1_loss(q, target_q.detach())
