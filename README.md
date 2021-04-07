@@ -11,15 +11,16 @@
 8. [TD3](https://github.com/rl-max/deep-reinforcement-learning-pytorch/blob/main/td3.py)
 9. [SAC](https://github.com/rl-max/deep-reinforcement-learning-pytorch/blob/main/sac.py)
 10. [Asynchronous-PPO(A3C)](https://github.com/rl-max/deep-reinforcement-learning-pytorch/blob/main/asynchronous-ppo.py)
-11. [ACER(single-thread)](https://github.com/rl-max/deep-reinforcement-learning-pytorch/blob/main/acer.py)
+11. [ACER(single-thread)](https://github.com/rl-max/deep-reinforcement-learning-pytorch/blob/main/single-acer.py)
+12. [ACER](https://github.com/rl-max/deep-reinforcement-learning-pytorch/blob/main/acer.py)
 ## Algorithms coming soon
-12. [C51](https://github.com/rl-max/deep-reinforcement-learning-pytorch/blob/main/c51.py)
+13. [C51](https://github.com/rl-max/deep-reinforcement-learning-pytorch/blob/main/c51.py)
 (C51 is being trained poorly now. It will be fixed later. Please use it for reference only)
 ## Algorithms to be added in the future
-13. Synchronous-PPO
-14. IMPALA
-15. D4PG
-16. QR-DQN
-17. IQN
-18. FQF(Fully parameterized Quantile Function)
-19. TRPO
+14. Synchronous-PPO
+15. IMPALA
+16. D4PG
+17. QR-DQN
+18. IQN
+19. FQF(Fully parameterized Quantile Function)
+20. TRPO

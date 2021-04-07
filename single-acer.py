@@ -6,15 +6,14 @@ import torch.optim as optim
 import torch.autograd as autograd
 import random
 import itertools
-import threading as T
 from collections import deque
 from torch.distributions import Categorical
 
+#Note: single-thread version, support trpo-update
 #Hyperparameters
 EPISODES = 10000
 learning_rate = 0.0002
 discount_factor = 0.98
-num_agents = 3
 train_interval = 10
 replay_iter = 8
 buffer_len, start_train = 20000, 500
@@ -53,14 +52,14 @@ def mini_batch(data):
            torch.stack(probs, dim=0).float(), torch.tensor(rewards).float(),\
            torch.tensor(next_obs).float(), torch.tensor(done)
     
-def train_process(net, global_avgnet, samples, global_optimizer):
+def train_process(net, avg_net, samples, optimizer):
     obs, acts, old_probs, rewards, next_obs, done = samples
     acts, rewards = acts.view(-1, 1), rewards.view(-1, 1)
     final_q, final_p = net.q(next_obs[-1].unsqueeze(0)), net.p(next_obs[-1].unsqueeze(0))
     final_v = torch.sum(final_q * final_p, dim=1)
     qval = net.q(obs)
     current_p = net.p(obs)
-    avg_p = global_avgnet.p(obs)
+    avg_p = avg_net.p(obs)
     value = torch.sum(qval*current_p, dim=1, keepdim=True)
     
     act_q = qval.gather(1, acts)
@@ -95,30 +94,28 @@ def train_process(net, global_avgnet, samples, global_optimizer):
     g_, k_ = g.unsqueeze(2), k.unsqueeze(1)
     solve = (torch.bmm(k_, g_) - trpo_delta) / k_norm
     new_g = g - torch.max(torch.tensor(0), solve.view(-1, 1))*k
+
     q_loss = F.smooth_l1_loss(act_q, ret_q.detach())
-    
-    global_optimizer.zero_grad()
+    optimizer.zero_grad()
     net.policy.weight._grad = autograd.grad(-policy_obj, net.policy.weight, retain_graph=True)[0]
     net.pi.backward(-new_g)
     q_loss.backward()
-    for global_param, local_param in zip(global_net.parameters(), net.parameters()):
-        global_param._grad = local_param.grad
-    global_optimizer.step()
+    optimizer.step()
     
-def train(net, global_avgnet, online_sample, buffer, global_optimizer):
-    train_process(net, global_avgnet, mini_batch(online_sample), global_optimizer)
+def train(net, avg_net, online_sample, buffer, optimizer):
+    train_process(net, avg_net, mini_batch(online_sample), optimizer)
     
     if len(buffer) > start_train:
         for _ in range(replay_iter):
             key = random.randint(0, len(buffer)-train_interval)
             replay_sample = itertools.islice(buffer, key, key+train_interval)
-            train_process(net, global_avgnet, mini_batch(replay_sample), global_optimizer)
+            train_process(net, avg_net, mini_batch(replay_sample), optimizer)
 
-def agent(rank):
+if __name__ == '__main__':
     env = gym.make('CartPole-v1')
-    net = Network()
-    net.load_state_dict(global_net.state_dict())
-    global_optimizer = optim.Adam(global_net.parameters(), lr=learning_rate)
+    net, avg_net = Network(), Network()
+    avg_net.load_state_dict(net.state_dict())
+    optimizer = optim.Adam(net.parameters(), lr=learning_rate)
     buffer = deque(maxlen=buffer_len)
     samples, score, step = [], 0.0, 0
     
@@ -138,24 +135,13 @@ def agent(rank):
             obs = next_obs
             
             if step%train_interval==0:
-                train(net, global_avgnet, samples, buffer, global_optimizer)
-                for a_param, param in zip(global_avgnet.parameters(), global_net.parameters()):
+                train(net, avg_net, samples, buffer, optimizer)
+                for a_param, param in zip(avg_net.parameters(), net.parameters()):
                     a_param.data.copy_(a_param.data*avgnet_ratio + param.data*(1-avgnet_ratio))
-                net.load_state_dict(global_net.state_dict())
                 samples = []
         
         if ep%10==0 and ep!=0:
-            print('agent_num:{}, episode:{}, avg_score:{}'.format(rank,ep,score/10.0))
+            print('episode:{}, num_train:{}, avg_score:{}'.format(ep, \
+                   step//train_interval, score/10.0))
             score = 0.0
     env.close()
-    
-if __name__ == '__main__':
-    global_net, global_avgnet = Network(), Network()
-    global_avgnet.load_state_dict(global_net.state_dict())
-    agents = []
-    for rank in range(num_agents):
-        actor = T.Thread(target=agent, args=(rank,))
-        actor.start()
-        agents.append(actor)
-    for t in agents:
-        t.join()
