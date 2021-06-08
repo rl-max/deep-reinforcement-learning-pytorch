@@ -48,6 +48,8 @@ def mini_batch(data):
         s, a, p, r, s_, d = transition
         obs.append(s); acts.append(a); probs.append(p); rewards.append(r)
         next_obs.append(s_), done.append(d)
+        if d:
+            break
     
     return torch.tensor(obs).float(), torch.tensor(acts), \
            torch.stack(probs, dim=0).float(), torch.tensor(rewards).float(),\
