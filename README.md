@@ -18,6 +18,7 @@
 14. [QR-DQN](https://github.com/rl-max/deep-reinforcement-learning-pytorch/blob/main/qr-dqn.py)
 15. [IQN](https://github.com/rl-max/deep-reinforcement-learning-pytorch/blob/main/iqn.py)
 16. [DIAYN](https://github.com/rl-max/deep-reinforcement-learning-pytorch/blob/main/diayn.py)
+
 (These algorithms require further testing)
 ## Algorithms to be added in the future
 17. FQF(Fully parameterized Quantile Function)
