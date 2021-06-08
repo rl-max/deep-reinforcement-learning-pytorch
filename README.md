@@ -15,12 +15,13 @@
 12. [ACER](https://github.com/rl-max/deep-reinforcement-learning-pytorch/blob/main/acer.py)
 ## Algorithms coming soon
 13. [C51](https://github.com/rl-max/deep-reinforcement-learning-pytorch/blob/main/c51.py)
-(C51 is being trained poorly now. It will be fixed later. Please use it for reference only)
+14. [QR-DQN](https://github.com/rl-max/deep-reinforcement-learning-pytorch/blob/main/qr-dqn.py)
+15. [IQN](https://github.com/rl-max/deep-reinforcement-learning-pytorch/blob/main/iqn.py)
+16. [DIAYN](https://github.com/rl-max/deep-reinforcement-learning-pytorch/blob/main/diayn.py)
+(These algorithms require further testing)
 ## Algorithms to be added in the future
-14. Synchronous-PPO
-15. IMPALA
-16. D4PG
-17. QR-DQN
-18. IQN
-19. FQF(Fully parameterized Quantile Function)
-20. TRPO
+17. FQF(Fully parameterized Quantile Function)
+18. D4PG
+19. IMPALA
+20. Synchronous-PPO
+21. TRPO
