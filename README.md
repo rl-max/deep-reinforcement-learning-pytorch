@@ -18,6 +18,7 @@
 14. [QR-DQN](https://github.com/rl-max/deep-reinforcement-learning-pytorch/blob/main/qr-dqn.py)
 15. [IQN](https://github.com/rl-max/deep-reinforcement-learning-pytorch/blob/main/iqn.py)
 16. [DIAYN](https://github.com/rl-max/deep-reinforcement-learning-pytorch/blob/main/diayn.py)
+<<<<<<< HEAD
 17. [Curiosity-Exploration](https://github.com/rl-max/deep-reinforcement-learning-pytorch/blob/main/curiosity-exploration.py)
 
 (These algorithms require further testing)
@@ -27,3 +28,13 @@
 20. IMPALA
 21. Synchronous-PPO
 22. TRPO
+=======
+
+(These algorithms require further testing)
+## Algorithms to be added in the future
+17. FQF(Fully parameterized Quantile Function)
+18. D4PG
+19. IMPALA
+20. Synchronous-PPO
+21. TRPO
+>>>>>>> 172198697cff114ba02d9103ef2cd4b585485265
