@@ -21,15 +21,18 @@ alpha_lr = 0.001
 buffer_size, start_train = 100000, 2000
 batch_size = 32
 target_update = 0.995
+skill_num, z_size = 16, 8
+#constant
+state_space, action_space = 24, 4
 
 class PolicyNet(nn.Module):
     def __init__(self):
         super().__init__()
-        self.fc_s = nn.Linear(24, 256)
-        self.fc_z = nn.Linear(8, 256)
+        self.fc_s = nn.Linear(state_space, 256)
+        self.fc_z = nn.Linear(z_size, 256)
         self.hidden = nn.Linear(512, 512)
-        self.mu = nn.Linear(512, 4)
-        self.sigma = nn.Linear(512, 4)
+        self.mu = nn.Linear(512, action_space)
+        self.sigma = nn.Linear(512, action_space)
     
     def forward(self, obs, z):
         obs = F.relu(self.fc_s(obs))
@@ -45,9 +48,9 @@ class PolicyNet(nn.Module):
 class QNet(nn.Module):
     def __init__(self):
         super().__init__()
-        self.fc_s = nn.Linear(24, 256)
-        self.fc_z = nn.Linear(8, 256)
-        self.fc_a = nn.Linear(4, 256)
+        self.fc_s = nn.Linear(state_space, 256)
+        self.fc_z = nn.Linear(z_size, 256)
+        self.fc_a = nn.Linear(action_space, 256)
         self.fc = nn.Linear(768, 768)
         self.q = nn.Linear(768, 1)
     
@@ -62,10 +65,10 @@ class QNet(nn.Module):
 class Discriminator(nn.Module):
     def __init__(self):
         super().__init__()
-        self.fc1 = nn.Linear(24, 512)
+        self.fc1 = nn.Linear(state_space, 512)
         self.fc2 = nn.Linear(512, 512)
         self.fc3 = nn.Linear(512, 512)
-        self.discrim = nn.Linear(512, 16)
+        self.discrim = nn.Linear(512, skill_num)
     
     def forward(self, obs):
         x = F.relu(self.fc1(obs))
@@ -134,12 +137,12 @@ if __name__ == '__main__':
     disc_optimizer = optim.Adam(discriminator.parameters(), lr=discrim_lr)
     
     buffer = deque(maxlen=buffer_size)
+    skills = [np.random.rand(z_size) for _ in range(skill_num)]
     score, step =  0.0, 0
     for ep in range(EPISODES):
         done = False
         obs = env.reset()
-        skills = [np.random.rand(8) for _ in range(16)]
-        select_z  = random.randint(0, 15)
+        select_z  = random.randint(0, skill_num-1)
         z = skills[select_z]
         while not done:
             action, _ = pinet(torch.tensor(obs).unsqueeze(0).float(),\
