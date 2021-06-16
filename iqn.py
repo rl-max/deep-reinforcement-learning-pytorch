@@ -56,21 +56,21 @@ def mini_batch(buffer):
 
 def train(net, target_net, optimizer, buffer):
     obs, acts, rewards, next_obs, done = mini_batch(buffer)
-    next_q = [predict(target_net, next_obs, cvar_eta)[0] for _ in range(target_sprt)]
-    next_q = torch.stack(next_q, dim=0)
-    max_act = next_q.mean(dim=0).argmax(dim=1)
     
-    next_qval = [next_q[i].gather(1, max_act.view(-1, 1)) for i in range(target_sprt)] 
-    next_qval = torch.stack(next_qval, dim=1).squeeze(2)
+    next_q = [predict(target_net, next_obs, cvar_eta)[0] for _ in range(target_sprt)]
+    next_q = torch.stack(next_q, dim=2)
+    max_act = next_q.mean(dim=2).argmax(dim=1)
+    next_qval = [next_q[idx][max_a] for idx, max_a in enumerate(max_act)] 
+    next_qval = torch.stack(next_qval, dim=0)
     target_q = rewards.view(-1, 1) + discount_factor * next_qval
     
     current_q, probs = [], []
     for _ in range(pred_sprt):
         val, taus = predict(net, obs, cvar_eta)
         current_q.append(val); probs.append(taus)
-    current_q = torch.stack(current_q, dim=0)
-    curr_qval = [current_q[i].gather(1, acts.view(-1, 1)) for i in range(pred_sprt)]
-    curr_qval = torch.stack(curr_qval, dim=1).squeeze(2)
+    current_q = torch.stack(current_q, dim=2)
+    curr_qval = [current_q[idx][a] for idx, a in enumerate(acts)]
+    curr_qval = torch.stack(curr_qval, dim=0)
     probs = torch.stack(probs, dim=1).unsqueeze(1)
     
     #Quantile Regresion Loss
@@ -99,8 +99,8 @@ if __name__ == '__main__':
     
     buffer = deque(maxlen=buffer_size)
     score, step = 0, 0
-    epsilon, epsilon_decay = 0.2, 1-5e-6
-    target_interval = 20
+    epsilon, epsilon_decay = 0.4, 1-5e-6
+    target_interval = 15
     
     for ep in range(EPISODES):
         obs = env.reset()
