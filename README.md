@@ -19,11 +19,12 @@
 15. [IQN](https://github.com/rl-max/deep-reinforcement-learning-pytorch/blob/main/iqn.py)
 16. [DIAYN](https://github.com/rl-max/deep-reinforcement-learning-pytorch/blob/main/diayn.py)
 17. [Curiosity-Exploration](https://github.com/rl-max/deep-reinforcement-learning-pytorch/blob/main/curiosity-exploration.py)
+18. [GoalGAN](https://github.com/rl-max/deep-reinforcement-learning-pytorch/blob/main/goalgan.py)
 
 (These algorithms require further testing)
 ## Algorithms to be added in the future
-18. FQF(Fully parameterized Quantile Function)
-19. D4PG
-20. IMPALA
-21. Synchronous-PPO
-22. TRPO
+19. FQF(Fully parameterized Quantile Function)
+20. D4PG
+21. IMPALA
+22. Synchronous-PPO
+23. TRPO
