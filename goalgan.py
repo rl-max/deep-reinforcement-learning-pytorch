@@ -47,14 +47,14 @@ class Discriminator(nn.Module):
         self.fc1 = nn.Linear(state_space, 256)
         self.fc2 = nn.Linear(256, 256)
         self.fc3 = nn.Linear(256, 256)
-        self.prob = nn.Linear(256, 1)
+        self.output = nn.Linear(256, 1)
     
     def forward(self, goal):
         x = F.relu(self.fc1(goal))
         x = F.relu(self.fc2(x))
         x = F.relu(self.fc3(x))
-        prob = torch.tanh(self.prob(x))
-        return prob
+        regressn = torch.tanh(self.output(x))
+        return regressn
     
 class QNet(nn.Module):
     def __init__(self):
