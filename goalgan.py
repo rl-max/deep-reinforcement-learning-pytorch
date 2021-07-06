@@ -53,8 +53,8 @@ class Discriminator(nn.Module):
         x = F.relu(self.fc1(goal))
         x = F.relu(self.fc2(x))
         x = F.relu(self.fc3(x))
-        regressn = torch.tanh(self.output(x))
-        return regressn
+        #least-square loss
+        return self.output(x)
     
 class QNet(nn.Module):
     def __init__(self):
