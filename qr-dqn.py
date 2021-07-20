@@ -13,11 +13,13 @@ discount_factor = 0.98
 buffer_size, start_train = 100000, 2000
 batch_size = 32
 num_support = 20
-k = 1.0
+k = 1.0 #for huber loss
 state_space, action_space = 8, 4
 
-#base formula
-tau_prob = [n/num_support for n in range(num_support+1)]
+#============================ base formula ============================
+#make culminative distribution(tau-1 .... tau-n) from uniform probablity
+tau_prob = [n/num_support for n in range(num_support+1)] 
+#get middle of two-taus(which is *unique minimizer* of wasserstein distance)
 mid_prob = [(tau_prob[i] + tau_prob[i+1])/2 for i in range(num_support)]
 
 class Quantile(nn.Module):
@@ -29,13 +31,21 @@ class Quantile(nn.Module):
         self.acts = [nn.Linear(256, num_support) for _ in range(action_space)]
     
     def forward(self, x):
+        '''
+        network-input: state
+        output:        q-distribution for each action -> Z(s, .)
+        output-shape:  (actions, *batch_size*, supports)
+        '''
         x = F.relu(self.fc1(x))
         x = F.relu(self.fc2(x))
         x = F.relu(self.fc3(x))
         value = [self.acts[i](x) for i in range(action_space)]
         return value
 
-def mini_batch(buffer):
+def make_batch(buffer):
+    '''
+    Make batch of train-samples by sampling from the buffer
+    '''
     mini_batch = random.sample(buffer, batch_size)
     obs, acts, rewards, next_obs, done = [], [], [], [], []
     
@@ -50,29 +60,50 @@ def mini_batch(buffer):
            torch.tensor(done)
 
 def train(net, target_net, optimizer, buffer):
-    obs, acts, rewards, next_obs, done = mini_batch(buffer)
-    next_q = target_net(next_obs)
-    next_q = torch.stack(next_q, dim=1)
-    qvals = (1/num_support) * torch.sum(next_q, dim=2)
-    max_acts = qvals.argmax(dim=1)
-    max_quantile = [next_q[idx][max_a] for idx, max_a in enumerate(max_acts)]
-    max_quantile = torch.stack(max_quantile, dim=0)
-    target_q = rewards.view(-1, 1) + discount_factor * max_quantile
+    '''
+    Train network by samples from buffer
     
-    current_q = torch.stack(net(obs), dim=1)
-    curr_qval = [current_q[idx][a] for idx, a in enumerate(acts)]
-    curr_qval = torch.stack(curr_qval, dim=0)
+    In this function, 
+    next_supports means *q-distribution* over next-states
+    supports means *q-distribution* over states
+    '''
+    obs, acts, rewards, next_obs, done = make_batch(buffer)
+    next_supports = target_net(next_obs)
+    #next_supports(=list)'s shape is (*act_space*, batch_size, num_support)
+    next_supports = torch.stack(next_supports, dim=1) #convert to tensor
+    #now, shape is (*batch_size*, act_space, num_support)
     
-    #Quantile Regression Loss
-    target_q = target_q.view(batch_size, -1, 1).expand(-1, num_support, num_support).detach()
-    curr_q = curr_qval.view(batch_size, 1, -1).expand(-1, num_support, num_support)
-    diff = target_q - curr_q
+    next_q = (1/num_support) * torch.sum(next_supports, dim=2) #get Q-value from dist.
+    #next_q(expectation over support)'s shape is (batch_size, act_space)
+    max_acts = next_q.argmax(dim=1) 
+    #max_acts'shape is just (batch_size,)
+    
+    #============= get next-supports of optimal actions => Z(s', a*) ==============
+    max_quantile = [next_supports[idx][max_a] for idx, max_a in enumerate(max_acts)]
+    max_quantile = torch.stack(max_quantile, dim=0) #just convert to tensor
+    #max_quantile's shape is (batch_size, *num_support*) (actions were reduced)
+    
+    target_supports = rewards.view(-1, 1) + discount_factor * max_quantile
+    
+    supports = torch.stack(net(obs), dim=1) #supports over states
+    
+    #============= get supports of action => Z(s, a) ==============
+    supports_a = [supports[idx][a] for idx, a in enumerate(acts)]
+    supports_a = torch.stack(supports_a, dim=0) #just convert to tensor
+    
+    #============== Quantile Regression Loss Calculation =================
+    target_supports = target_supports.view(batch_size, -1, 1).expand(-1, num_support, num_support).detach()
+    supports_a = supports_a.view(batch_size, 1, -1).expand(-1, num_support, num_support)
+    diff = target_supports - supports_a
+    
+    #Huber loss calculation
     soft_diff = torch.where(torch.abs(diff)<=k, 0.5*torch.pow(diff, 2), \
                             k*(torch.abs(diff) - 0.5*k))
     s_diff1 = torch.tensor(mid_prob) * soft_diff
     s_diff2 = (1 - torch.tensor(mid_prob)) * soft_diff
     error = torch.where(diff>=0, s_diff1, s_diff2)
     loss = torch.sum(error) / (batch_size * num_support)
+    
     optimizer.zero_grad()
     loss.backward()
     optimizer.step()
@@ -92,9 +123,10 @@ if __name__ == '__main__':
         obs = env.reset()
         done = False
         while not done:
-            quantiles = net(torch.tensor(obs).unsqueeze(0).float())
-            quantile = torch.stack(quantiles, dim=1)
-            qvals = (1/num_support) * torch.sum(quantile, dim=2)
+            quantiles = net(torch.tensor(obs).unsqueeze(0).float()) 
+            #shape: (action_space, 1, num_supports)
+            quantiles = torch.stack(quantiles, dim=1) #shape: (1, action_space, num_supports)
+            qvals = (1/num_support) * torch.sum(quantiles, dim=2) #mean over supports
             rand = random.random()
             if rand < epsilon:
                 action = random.randint(0, action_space-1)
