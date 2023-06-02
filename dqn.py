@@ -61,7 +61,7 @@ if __name__ == '__main__':
     target_interval = 20
     
     for ep in range(EPISODES):
-        obs = env.reset()
+        obs = env.reset()[0]
         done = False
         while not done:
             q_value = net(torch.tensor(obs).float())
@@ -70,7 +70,8 @@ if __name__ == '__main__':
                 action = random.randint(0, 1)
             else:
                 action = q_value.argmax().item()
-            next_obs, reward, done, info = env.step(action)
+            
+            next_obs, reward, done, _, info = env.step(action)
             buffer.append((obs, action, reward/100.0, next_obs, done))
             obs = next_obs
             step += 1
